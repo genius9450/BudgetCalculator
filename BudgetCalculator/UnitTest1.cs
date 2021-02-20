@@ -35,7 +35,7 @@ namespace BudgetCalculator
             AmountShouldBe(amount, 31);
         }
 
-        private static void AmountShouldBe(decimal amount, int expected)
+        private static void AmountShouldBe(double amount, int expected)
         {
             Assert.AreEqual(expected, amount);
         }
@@ -47,8 +47,6 @@ namespace BudgetCalculator
 
         }
 
-        
-
         [TestMethod]
         public void partial_month()
         {
@@ -56,7 +54,7 @@ namespace BudgetCalculator
             {
                 new Budget() {YearMonth = "202101", Amount = 310}
             });
-           
+
 
             DateTime start = new DateTime(2021, 1, 1);
             DateTime end = new DateTime(2021, 1, 10);
@@ -82,44 +80,56 @@ namespace BudgetCalculator
             Assert.AreEqual(59, amount);
         }
 
-
-        public class BudgetCalculator
+        [TestMethod]
+        public void cross_partial_month()
         {
-            private readonly IBudgetRepo _budgetRepo;
-
-            public BudgetCalculator(IBudgetRepo budgetRepo)
+            GivenBudget(new List<Budget>()
             {
-                _budgetRepo = budgetRepo;
-            }
-
-            public decimal Query(DateTime start, DateTime end)
-            {
-                var totalDays = (end - start).TotalDays +1 ;
-                var startMonth = start.ToString("yyyyMM");
-                var endMonth = end.ToString("yyyyMM");
+                new Budget() {YearMonth = "202101", Amount = 310},
+                new Budget() {YearMonth = "202102", Amount = 28}
+            });
 
 
-                var budgets = _budgetRepo.GetAll();
+            DateTime start = new DateTime(2021, 1, 30);
+            DateTime end = new DateTime(2021, 2, 2);
+            var amount = _budgetCalculator.Query(start, end);
 
-                var monthAmounts = budgets.Where(x => x.YearMonth == startMonth).Sum(x=>x.Amount);
-                var daysInMonth = DateTime.DaysInMonth(start.Year, start.Month);
-
-                var sum = monthAmounts * (totalDays/daysInMonth);
-
-
-                return (decimal) sum;
-            }
+            Assert.AreEqual(22, amount);
         }
-    }
 
-    public interface IBudgetRepo
-    {
-        List<Budget> GetAll();
-    }
+        [TestMethod]
+        public void cross_partial_month_with_blank_month()
+        {
+            GivenBudget(new List<Budget>()
+            {
+                new Budget() {YearMonth = "202101", Amount = 310},
+                new Budget() {YearMonth = "202103", Amount = 31}
+            });
 
-    public class Budget
-    {
-        public int Amount { get; set; }
-        public string YearMonth { get; set; }
+
+            DateTime start = new DateTime(2021, 1, 30);
+            DateTime end = new DateTime(2021, 3, 2);
+            var amount = _budgetCalculator.Query(start, end);
+
+            Assert.AreEqual(22, amount);
+        }
+
+        [TestMethod]
+        public void cross_year()
+        {
+            GivenBudget(new List<Budget>()
+            {
+                new Budget() {YearMonth = "202012", Amount = 31},
+                new Budget() {YearMonth = "202101", Amount = 310}
+            });
+
+
+            DateTime start = new DateTime(2020, 12, 30);
+            DateTime end = new DateTime(2021, 1, 5);
+            var amount = _budgetCalculator.Query(start, end);
+
+            Assert.AreEqual(52, amount);
+        }
+        
     }
 }
