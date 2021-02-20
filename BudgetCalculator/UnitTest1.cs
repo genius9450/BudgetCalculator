@@ -23,31 +23,63 @@ namespace BudgetCalculator
         [TestMethod]
         public void whole_month()
         {
-            _budgetRepo.GetAll().Returns(new List<Budget>()
+            GivenBudget(new List<Budget>()
             {
-                new Budget(){ YearMonth = "202101", Amount = 31 }
+                new Budget() {YearMonth = "202101", Amount = 31}
             });
 
-            DateTime start = new DateTime(2021, 1, 1);
-            DateTime end = new DateTime(2021, 1, 31);
+            var start = new DateTime(2021, 1, 1);
+            var end = new DateTime(2021, 1, 31);
             var amount = _budgetCalculator.Query(start, end);
 
-            Assert.AreEqual(31, amount);
+            AmountShouldBe(amount, 31);
         }
+
+        private static void AmountShouldBe(decimal amount, int expected)
+        {
+            Assert.AreEqual(expected, amount);
+        }
+
+        private void GivenBudget(List<Budget> budgetList)
+        {
+            _budgetRepo.GetAll().Returns(budgetList);
+
+
+        }
+
+        
 
         [TestMethod]
         public void partial_month()
         {
-            _budgetRepo.GetAll().Returns(new List<Budget>()
+            GivenBudget(new List<Budget>()
             {
-                new Budget(){ YearMonth = "202101", Amount = 310 }
+                new Budget() {YearMonth = "202101", Amount = 310}
             });
+           
 
             DateTime start = new DateTime(2021, 1, 1);
             DateTime end = new DateTime(2021, 1, 10);
             var amount = _budgetCalculator.Query(start, end);
 
             Assert.AreEqual(100, amount);
+        }
+
+        [TestMethod]
+        public void cross_whole_month()
+        {
+            GivenBudget(new List<Budget>()
+            {
+                new Budget() {YearMonth = "202101", Amount = 31},
+                new Budget() {YearMonth = "202102", Amount = 28}
+            });
+
+
+            DateTime start = new DateTime(2021, 1, 1);
+            DateTime end = new DateTime(2021, 2, 28);
+            var amount = _budgetCalculator.Query(start, end);
+
+            Assert.AreEqual(59, amount);
         }
 
 
